@@ -1,4 +1,6 @@
 import { patients, consultations, type Patient, type InsertPatient, type Consultation, type InsertConsultation } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, gte, lt, or, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Patient methods
@@ -19,108 +21,89 @@ export interface IStorage {
   getTodayConsultations(): Promise<Consultation[]>;
 }
 
-export class MemStorage implements IStorage {
-  private patients: Map<number, Patient>;
-  private consultations: Map<number, Consultation>;
-  private currentPatientId: number;
-  private currentConsultationId: number;
-
-  constructor() {
-    this.patients = new Map();
-    this.consultations = new Map();
-    this.currentPatientId = 1;
-    this.currentConsultationId = 1;
-  }
-
-  // Patient methods
+export class DatabaseStorage implements IStorage {
   async getPatient(id: number): Promise<Patient | undefined> {
-    return this.patients.get(id);
+    const [patient] = await db.select().from(patients).where(eq(patients.id, id));
+    return patient || undefined;
   }
 
   async getPatients(): Promise<Patient[]> {
-    return Array.from(this.patients.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return await db.select().from(patients).orderBy(desc(patients.createdAt));
   }
 
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
-    const id = this.currentPatientId++;
-    const patient: Patient = { 
-      ...insertPatient, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.patients.set(id, patient);
+    const [patient] = await db
+      .insert(patients)
+      .values(insertPatient)
+      .returning();
     return patient;
   }
 
   async updatePatient(id: number, patientUpdate: Partial<InsertPatient>): Promise<Patient | undefined> {
-    const patient = this.patients.get(id);
-    if (!patient) return undefined;
-    
-    const updatedPatient = { ...patient, ...patientUpdate };
-    this.patients.set(id, updatedPatient);
-    return updatedPatient;
+    const [patient] = await db
+      .update(patients)
+      .set(patientUpdate)
+      .where(eq(patients.id, id))
+      .returning();
+    return patient || undefined;
   }
 
   async deletePatient(id: number): Promise<boolean> {
-    // Also delete related consultations
-    const consultationsToDelete = Array.from(this.consultations.values())
-      .filter(c => c.patientId === id);
-    consultationsToDelete.forEach(c => this.consultations.delete(c.id));
+    // Delete related consultations first
+    await db.delete(consultations).where(eq(consultations.patientId, id));
     
-    return this.patients.delete(id);
+    const result = await db.delete(patients).where(eq(patients.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async searchPatients(query: string): Promise<Patient[]> {
-    const lowerQuery = query.toLowerCase();
-    return Array.from(this.patients.values()).filter(patient =>
-      patient.firstName.toLowerCase().includes(lowerQuery) ||
-      patient.lastName.toLowerCase().includes(lowerQuery) ||
-      patient.phoneNumber.includes(query) ||
-      (patient.email && patient.email.toLowerCase().includes(lowerQuery))
+    return await db.select().from(patients).where(
+      or(
+        ilike(patients.firstName, `%${query}%`),
+        ilike(patients.lastName, `%${query}%`),
+        ilike(patients.phoneNumber, `%${query}%`),
+        ilike(patients.email, `%${query}%`)
+      )
     );
   }
 
-  // Consultation methods
   async getConsultation(id: number): Promise<Consultation | undefined> {
-    return this.consultations.get(id);
+    const [consultation] = await db.select().from(consultations).where(eq(consultations.id, id));
+    return consultation || undefined;
   }
 
   async getConsultations(): Promise<Consultation[]> {
-    return Array.from(this.consultations.values()).sort((a, b) => 
-      new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
-    );
+    return await db.select().from(consultations).orderBy(desc(consultations.appointmentDate));
   }
 
   async getConsultationsByPatient(patientId: number): Promise<Consultation[]> {
-    return Array.from(this.consultations.values())
-      .filter(consultation => consultation.patientId === patientId)
-      .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+    return await db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.patientId, patientId))
+      .orderBy(desc(consultations.appointmentDate));
   }
 
   async createConsultation(insertConsultation: InsertConsultation): Promise<Consultation> {
-    const id = this.currentConsultationId++;
-    const consultation: Consultation = { 
-      ...insertConsultation, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.consultations.set(id, consultation);
+    const [consultation] = await db
+      .insert(consultations)
+      .values(insertConsultation)
+      .returning();
     return consultation;
   }
 
   async updateConsultation(id: number, consultationUpdate: Partial<InsertConsultation>): Promise<Consultation | undefined> {
-    const consultation = this.consultations.get(id);
-    if (!consultation) return undefined;
-    
-    const updatedConsultation = { ...consultation, ...consultationUpdate };
-    this.consultations.set(id, updatedConsultation);
-    return updatedConsultation;
+    const [consultation] = await db
+      .update(consultations)
+      .set(consultationUpdate)
+      .where(eq(consultations.id, id))
+      .returning();
+    return consultation || undefined;
   }
 
   async deleteConsultation(id: number): Promise<boolean> {
-    return this.consultations.delete(id);
+    const result = await db.delete(consultations).where(eq(consultations.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getTodayConsultations(): Promise<Consultation[]> {
@@ -128,13 +111,14 @@ export class MemStorage implements IStorage {
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     
-    return Array.from(this.consultations.values())
-      .filter(consultation => {
-        const appointmentDate = new Date(consultation.appointmentDate);
-        return appointmentDate >= startOfDay && appointmentDate < endOfDay;
-      })
-      .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime());
+    return await db
+      .select()
+      .from(consultations)
+      .where(
+        sql`DATE(${consultations.appointmentDate}) = CURRENT_DATE`
+      )
+      .orderBy(consultations.appointmentDate);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
