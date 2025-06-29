@@ -69,14 +69,15 @@ export default function Consultations() {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Consultations</h1>
-            <p className="text-slate-600">Manage appointments and consultation records</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-900">Consultations</h1>
+            <p className="text-sm lg:text-base text-slate-600">Manage appointments and consultation records</p>
           </div>
           <Button 
             onClick={() => setIsConsultationModalOpen(true)}
-            className="medical-blue-500 text-white hover:medical-blue-600"
+            className="medical-blue-500 text-white hover:medical-blue-600 text-sm lg:text-base"
+            size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
             Schedule Consultation

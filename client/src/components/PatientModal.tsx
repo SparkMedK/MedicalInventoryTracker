@@ -111,9 +111,9 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold text-slate-900">
+      <DialogContent className="max-w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
+        <div className="flex items-center justify-between p-4 lg:p-6 border-b">
+          <h3 className="text-lg lg:text-xl font-semibold text-slate-900">
             {isEditing ? 'Edit Patient' : 'New Patient Registration'}
           </h3>
           <Button variant="ghost" size="icon" onClick={handleClose}>
@@ -122,11 +122,11 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
         </div>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 lg:p-6 space-y-4 lg:space-y-6">
             {/* Personal Information */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Personal Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Personal Information</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <FormField
                   control={form.control}
                   name="firstName"
@@ -196,8 +196,8 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
 
             {/* Contact Information */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Contact Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Contact Information</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <FormField
                   control={form.control}
                   name="phoneNumber"
@@ -244,8 +244,8 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
 
             {/* Medical Information */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Medical Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Medical Information</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <FormField
                   control={form.control}
                   name="bloodType"
@@ -320,8 +320,8 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
 
             {/* Insurance Information */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Insurance Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Insurance Information</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <FormField
                   control={form.control}
                   name="insuranceProvider"
@@ -352,13 +352,14 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
-              <Button type="button" variant="outline" onClick={handleClose}>
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4 pt-4 lg:pt-6 border-t border-slate-200">
+              <Button type="button" variant="outline" onClick={handleClose} size="sm" className="text-sm lg:text-base">
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                className="medical-blue-500 text-white hover:medical-blue-600"
+                className="medical-blue-500 text-white hover:medical-blue-600 text-sm lg:text-base"
+                size="sm"
                 disabled={createPatientMutation.isPending || updatePatientMutation.isPending}
               >
                 {(createPatientMutation.isPending || updatePatientMutation.isPending) 
