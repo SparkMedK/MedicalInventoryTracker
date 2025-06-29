@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertConsultationSchema, type InsertConsultation, type Consultation, type Patient } from "@shared/schema";
+import { z } from "zod";
+
+// Form schema with string dates for HTML inputs
+const consultationFormSchema = insertConsultationSchema.extend({
+  appointmentDate: z.string().min(1, "Appointment date is required"),
+  followUpDate: z.string().optional(),
+});
+
+type ConsultationFormData = z.infer<typeof consultationFormSchema>;
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -27,8 +36,8 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
     queryKey: ["/api/patients"],
   });
 
-  const form = useForm<InsertConsultation>({
-    resolver: zodResolver(insertConsultationSchema),
+  const form = useForm<ConsultationFormData>({
+    resolver: zodResolver(consultationFormSchema),
     defaultValues: consultation ? {
       patientId: consultation.patientId,
       appointmentDate: new Date(consultation.appointmentDate).toISOString().slice(0, 16),
@@ -38,7 +47,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
       diagnosis: consultation.diagnosis || "",
       treatment: consultation.treatment || "",
       prescriptions: consultation.prescriptions || "",
-      followUpDate: consultation.followUpDate || "",
+      followUpDate: consultation.followUpDate ? new Date(consultation.followUpDate).toISOString().slice(0, 10) : "",
     } : {
       patientId: 0,
       appointmentDate: "",
@@ -53,11 +62,11 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
   });
 
   const createConsultationMutation = useMutation({
-    mutationFn: (data: InsertConsultation) => {
+    mutationFn: (data: ConsultationFormData) => {
       const payload = {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
-        followUpDate: data.followUpDate || null,
+        followUpDate: data.followUpDate ? new Date(data.followUpDate).toISOString() : null,
       };
       return apiRequest("POST", "/api/consultations", payload);
     },
@@ -82,11 +91,11 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
   });
 
   const updateConsultationMutation = useMutation({
-    mutationFn: (data: InsertConsultation) => {
+    mutationFn: (data: ConsultationFormData) => {
       const payload = {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
-        followUpDate: data.followUpDate || null,
+        followUpDate: data.followUpDate ? new Date(data.followUpDate).toISOString() : null,
       };
       return apiRequest("PUT", `/api/consultations/${consultation?.id}`, payload);
     },
@@ -108,7 +117,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
     },
   });
 
-  const onSubmit = (data: InsertConsultation) => {
+  const onSubmit = (data: ConsultationFormData) => {
     if (isEditing) {
       updateConsultationMutation.mutate(data);
     } else {
@@ -123,22 +132,25 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold text-slate-900">
+      <DialogContent className="max-w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
+        <div className="flex items-center justify-between p-4 lg:p-6 border-b">
+          <DialogTitle className="text-lg lg:text-xl font-semibold text-slate-900">
             {isEditing ? 'Edit Consultation' : 'Schedule Consultation'}
-          </h3>
+          </DialogTitle>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
+        <DialogDescription className="sr-only">
+          {isEditing ? 'Edit consultation details and medical information' : 'Schedule a new consultation with patient details and medical information'}
+        </DialogDescription>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 lg:p-6 space-y-4 lg:space-y-6">
             {/* Basic Information */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Basic Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Basic Information</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 <FormField
                   control={form.control}
                   name="patientId"
@@ -234,8 +246,8 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
 
             {/* Medical Details */}
             <div>
-              <h4 className="text-lg font-medium text-slate-900 mb-4">Medical Details</h4>
-              <div className="space-y-4">
+              <h4 className="text-base lg:text-lg font-medium text-slate-900 mb-3 lg:mb-4">Medical Details</h4>
+              <div className="space-y-3 lg:space-y-4">
                 <FormField
                   control={form.control}
                   name="notes"
@@ -246,7 +258,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
                         <Textarea 
                           placeholder="Enter consultation notes, symptoms, observations..."
                           rows={3}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -264,7 +276,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
                         <Textarea 
                           placeholder="Enter diagnosis details..."
                           rows={2}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -282,7 +294,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
                         <Textarea 
                           placeholder="Enter treatment plan and recommendations..."
                           rows={2}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -300,7 +312,7 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
                         <Textarea 
                           placeholder="Enter prescribed medications, dosage, and instructions..."
                           rows={2}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -324,13 +336,14 @@ export default function ConsultationModal({ isOpen, onClose, consultation }: Con
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
-              <Button type="button" variant="outline" onClick={handleClose}>
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4 pt-4 lg:pt-6 border-t border-slate-200">
+              <Button type="button" variant="outline" onClick={handleClose} size="sm" className="text-sm lg:text-base">
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                className="medical-blue-500 text-white hover:medical-blue-600"
+                className="medical-blue-500 text-white hover:medical-blue-600 text-sm lg:text-base"
+                size="sm"
                 disabled={createConsultationMutation.isPending || updateConsultationMutation.isPending}
               >
                 {(createConsultationMutation.isPending || updateConsultationMutation.isPending) 

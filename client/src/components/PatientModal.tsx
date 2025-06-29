@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,13 +113,16 @@ export default function PatientModal({ isOpen, onClose, patient }: PatientModalP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
         <div className="flex items-center justify-between p-4 lg:p-6 border-b">
-          <h3 className="text-lg lg:text-xl font-semibold text-slate-900">
+          <DialogTitle className="text-lg lg:text-xl font-semibold text-slate-900">
             {isEditing ? 'Edit Patient' : 'New Patient Registration'}
-          </h3>
+          </DialogTitle>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
+        <DialogDescription className="sr-only">
+          {isEditing ? 'Edit patient information including personal details, contact information, medical history, and insurance' : 'Register a new patient with personal details, contact information, medical history, and insurance information'}
+        </DialogDescription>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 lg:p-6 space-y-4 lg:space-y-6">

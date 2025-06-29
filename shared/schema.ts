@@ -38,11 +38,28 @@ export const consultations = pgTable("consultations", {
 export const insertPatientSchema = createInsertSchema(patients).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Transform nullable string fields to empty strings for forms
+  email: z.string().nullish().transform(val => val || ""),
+  address: z.string().nullish().transform(val => val || ""),
+  bloodType: z.string().nullish().transform(val => val || ""),
+  emergencyContact: z.string().nullish().transform(val => val || ""),
+  allergies: z.string().nullish().transform(val => val || ""),
+  currentMedications: z.string().nullish().transform(val => val || ""),
+  insuranceProvider: z.string().nullish().transform(val => val || ""),
+  policyNumber: z.string().nullish().transform(val => val || ""),
 });
 
 export const insertConsultationSchema = createInsertSchema(consultations).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Transform nullable string fields to empty strings for forms
+  notes: z.string().nullish().transform(val => val || ""),
+  diagnosis: z.string().nullish().transform(val => val || ""),
+  treatment: z.string().nullish().transform(val => val || ""),
+  prescriptions: z.string().nullish().transform(val => val || ""),
+  followUpDate: z.string().nullish().transform(val => val || ""),
 });
 
 // Relations
