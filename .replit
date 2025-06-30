@@ -2,6 +2,9 @@ modules = ["nodejs-20", "web", "postgresql-16"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
+[env]
+DATABASE_URL = "postgresql://neondb_owner:npg_V5sHIcl0TwUR@ep-red-mode-afo5mjur.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require"
+
 [nix]
 channel = "stable-24_05"
 
